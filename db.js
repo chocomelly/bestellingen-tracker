@@ -1,10 +1,11 @@
 const { Pool } = require('pg');
 
+const url = process.env.DATABASE_URL || '';
+const needsSSL = url.includes('proxy.rlwy.net') || url.includes('sslmode=require') || process.env.PGSSL === 'true';
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL?.includes('railway') || process.env.NODE_ENV === 'production'
-    ? { rejectUnauthorized: false }
-    : false
+  ssl: needsSSL ? { rejectUnauthorized: false } : false
 });
 
 const SCHEMA = `

@@ -144,7 +144,7 @@ async function startScanLoop() {
   try {
     await db.init();
   } catch (err) {
-    console.error('DB init failed:', err.message);
+    console.error('DB init failed:', err.message, err.code, err.stack);
   }
 
   setTimeout(startScanLoop, 30_000);
