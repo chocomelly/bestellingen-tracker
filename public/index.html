@@ -4,88 +4,293 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bestellingen Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  :root {
+    --bg: #f7f4ee;
+    --bg-gradient: radial-gradient(ellipse at top, #faf6ed 0%, #f5f0e3 100%);
+    --surface: #ffffff;
+    --surface-soft: #fbf9f3;
+    --border: #ebe5d6;
+    --border-strong: #d8d1bd;
+    --text: #1f1d18;
+    --text-muted: #75716a;
+    --text-subtle: #a09b91;
+    --accent: #2a2724;
+    --besteld: #c2761c;
+    --besteld-bg: #fef4e3;
+    --verzonden: #2563a8;
+    --verzonden-bg: #e3eef9;
+    --bezorgd: #3d6630;
+    --bezorgd-bg: #e7f0e0;
+    --shadow-sm: 0 1px 2px rgba(31, 29, 24, 0.04);
+    --shadow-md: 0 1px 3px rgba(31, 29, 24, 0.06), 0 4px 12px rgba(31, 29, 24, 0.04);
+    --shadow-lg: 0 4px 16px rgba(31, 29, 24, 0.08), 0 12px 32px rgba(31, 29, 24, 0.06);
+    --radius: 14px;
+    --radius-sm: 10px;
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
-    background: #f5f3ef;
-    color: #2a2a2a;
-    line-height: 1.5;
-    padding: 24px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    background: var(--bg);
+    background-image: var(--bg-gradient);
+    background-attachment: fixed;
+    color: var(--text);
+    line-height: 1.55;
+    padding: 32px 24px;
     max-width: 1100px;
     margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
   }
-  header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-  .header-text h1 { font-size: 28px; font-weight: 600; margin-bottom: 4px; }
-  .subtitle { color: #6b6b6b; font-size: 14px; }
-  .badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  header { margin-bottom: 32px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .header-text h1 {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #1f1d18 0%, #5a5246 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle { color: var(--text-muted); font-size: 14px; }
+  .badges { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .badge-pill {
     display: inline-flex; align-items: center; gap: 6px;
-    background: #e8f0e3; color: #3d6630;
-    font-size: 12px; padding: 4px 10px; border-radius: 12px;
+    background: var(--bezorgd-bg); color: var(--bezorgd);
+    font-size: 12px; font-weight: 500;
+    padding: 5px 11px; border-radius: 999px;
+    border: 1px solid rgba(61, 102, 48, 0.12);
   }
-  .badge-pill.warn { background: #fff3e0; color: #b8651a; }
+  .badge-pill.warn {
+    background: var(--besteld-bg); color: var(--besteld);
+    border-color: rgba(194, 118, 28, 0.15);
+  }
+  .badge-pill.neutral {
+    background: var(--surface); color: var(--text-muted);
+    border-color: var(--border);
+  }
+  .badge-pill svg { width: 12px; height: 12px; }
   .header-actions { display: flex; gap: 8px; align-items: center; }
-  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
-  .stat { background: white; padding: 16px; border-radius: 10px; border: 1px solid #e8e4dd; }
-  .stat-value { font-size: 24px; font-weight: 600; }
-  .stat-label { font-size: 12px; color: #6b6b6b; text-transform: uppercase; letter-spacing: 0.5px; }
-  .panel { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e8e4dd; margin-bottom: 20px; }
-  .panel h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .stat {
+    background: var(--surface);
+    padding: 18px 20px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: var(--text-subtle);
+    opacity: 0.5;
+  }
+  .stat[data-status="besteld"]::before { background: var(--besteld); opacity: 1; }
+  .stat[data-status="verzonden"]::before { background: var(--verzonden); opacity: 1; }
+  .stat[data-status="bezorgd"]::before { background: var(--bezorgd); opacity: 1; }
+  .stat-label-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .stat-icon { width: 18px; height: 18px; color: var(--text-subtle); }
+  .stat[data-status="besteld"] .stat-icon { color: var(--besteld); }
+  .stat[data-status="verzonden"] .stat-icon { color: var(--verzonden); }
+  .stat[data-status="bezorgd"] .stat-icon { color: var(--bezorgd); }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; }
+  .stat-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 500; }
+  .panel {
+    background: var(--surface);
+    padding: 22px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 18px;
+  }
+  .panel h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel h2 svg { width: 16px; height: 16px; color: var(--text-muted); }
   textarea, input, select {
-    width: 100%; padding: 10px 12px; border: 1px solid #d8d4cc;
-    border-radius: 8px; font-size: 14px; font-family: inherit; background: #fafaf7;
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: inherit;
+    background: var(--surface-soft);
+    color: var(--text);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   }
-  textarea { resize: vertical; min-height: 100px; }
-  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; }
+  textarea:focus, input:focus, select:focus {
+    outline: none;
+    border-color: var(--text);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(31, 29, 24, 0.06);
+  }
+  textarea { resize: vertical; min-height: 110px; line-height: 1.5; }
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 12px; }
   button {
-    background: #2a2a2a; color: white; border: none; padding: 10px 16px;
-    border-radius: 8px; font-size: 14px; cursor: pointer; font-family: inherit;
+    background: var(--accent); color: white; border: none;
+    padding: 10px 18px; border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 500; cursor: pointer;
+    font-family: inherit; letter-spacing: -0.005em;
+    transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.15s ease;
+    box-shadow: var(--shadow-sm);
   }
-  button:hover { background: #444; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
-  button.secondary { background: white; color: #2a2a2a; border: 1px solid #d8d4cc; }
-  button.secondary:hover { background: #f5f3ef; }
-  button.small { padding: 6px 10px; font-size: 12px; }
-  .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  button:hover { background: #3a342e; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+  button:active { transform: translateY(0); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border-strong); box-shadow: var(--shadow-sm); }
+  button.secondary:hover { background: var(--surface-soft); border-color: var(--text-muted); }
+  button.small { padding: 7px 12px; font-size: 12.5px; }
+  .filters { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
   .filter-btn {
-    background: white; border: 1px solid #d8d4cc; color: #2a2a2a;
-    padding: 6px 12px; border-radius: 16px; font-size: 13px; cursor: pointer;
+    background: transparent; border: 1px solid transparent; color: var(--text-muted);
+    padding: 6px 14px; border-radius: 999px; font-size: 13px; cursor: pointer;
+    font-family: inherit; font-weight: 500;
+    transition: all 0.15s ease;
   }
-  .filter-btn.active { background: #2a2a2a; color: white; border-color: #2a2a2a; }
+  .filter-btn:hover { color: var(--text); background: var(--surface); }
+  .filter-btn.active {
+    background: var(--accent); color: white; border-color: var(--accent);
+    box-shadow: var(--shadow-sm);
+  }
   .order {
-    background: white; border: 1px solid #e8e4dd; border-radius: 10px;
-    padding: 16px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto;
-    gap: 12px; align-items: start;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: start;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    box-shadow: var(--shadow-sm);
   }
-  .order-product { font-weight: 600; margin-bottom: 4px; }
-  .order-meta { font-size: 13px; color: #6b6b6b; }
-  .order-meta span { margin-right: 12px; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 500; }
-  .badge-besteld { background: #fff3e0; color: #b8651a; }
-  .badge-verzonden { background: #e3eef9; color: #1f5798; }
-  .badge-bezorgd { background: #e8f0e3; color: #3d6630; }
-  .source-tag { font-size: 11px; color: #999; margin-left: 6px; }
+  .order:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-strong);
+  }
+  .order-product {
+    font-weight: 600; font-size: 15px; margin-bottom: 6px;
+    letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  }
+  .source-tag {
+    font-size: 10.5px; color: var(--text-subtle);
+    font-weight: 500;
+    background: var(--surface-soft);
+    padding: 2px 8px; border-radius: 999px;
+    border: 1px solid var(--border);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .order-meta {
+    font-size: 13px; color: var(--text-muted);
+    display: flex; flex-wrap: wrap; gap: 4px 14px;
+    margin-bottom: 10px;
+  }
+  .order-meta span { display: inline-flex; align-items: center; gap: 5px; }
+  .order-meta svg { width: 13px; height: 13px; opacity: 0.6; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 11px; border-radius: 999px;
+    font-size: 12px; font-weight: 500;
+    border: 1px solid transparent;
+  }
+  .badge svg { width: 11px; height: 11px; }
+  .badge-besteld { background: var(--besteld-bg); color: var(--besteld); border-color: rgba(194, 118, 28, 0.15); }
+  .badge-verzonden { background: var(--verzonden-bg); color: var(--verzonden); border-color: rgba(37, 99, 168, 0.15); }
+  .badge-bezorgd { background: var(--bezorgd-bg); color: var(--bezorgd); border-color: rgba(61, 102, 48, 0.15); }
   .order-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-  .empty { text-align: center; padding: 40px; color: #6b6b6b; }
+  .empty {
+    text-align: center; padding: 56px 24px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px dashed var(--border-strong);
+  }
+  .empty-icon {
+    width: 44px; height: 44px;
+    margin: 0 auto 12px;
+    color: var(--text-subtle);
+    opacity: 0.6;
+  }
+  .empty-title { font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .empty-sub { font-size: 13px; }
   .help {
-    background: #f5f3ef; border-left: 3px solid #c8b88a; padding: 10px 14px;
-    margin-bottom: 12px; font-size: 13px; color: #4a4a4a; border-radius: 4px;
+    background: linear-gradient(180deg, #faf5e8 0%, #f7f1dc 100%);
+    border: 1px solid #ebdfb8;
+    border-left: 3px solid #d4b557;
+    padding: 11px 15px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: #5a4a1c;
+    border-radius: var(--radius-sm);
   }
-  details { margin-bottom: 12px; }
-  summary { cursor: pointer; font-weight: 500; padding: 8px 0; }
-  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 12px; }
+  details { margin-bottom: 18px; }
+  summary {
+    cursor: pointer;
+    font-weight: 500;
+    padding: 4px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+    list-style: none;
+    display: flex; align-items: center; gap: 8px;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: '+';
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 600; color: var(--text-muted);
+    transition: transform 0.15s ease, background 0.15s ease;
+  }
+  details[open] summary::before { content: '−'; background: var(--accent); color: white; border-color: var(--accent); }
+  summary:hover { color: var(--text); }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 12px; }
   .toast {
-    position: fixed; bottom: 20px; right: 20px; background: #2a2a2a; color: white;
-    padding: 12px 16px; border-radius: 8px; font-size: 14px; opacity: 0;
-    transition: opacity 0.2s; pointer-events: none; z-index: 100;
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--accent); color: white;
+    padding: 12px 18px; border-radius: var(--radius-sm);
+    font-size: 13.5px; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(120%);
+    transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+    pointer-events: none;
+    z-index: 100;
   }
-  .toast.show { opacity: 1; }
+  .toast.show { transform: translateY(0); }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .order, .stat, .panel { animation: fadeInUp 0.3s ease backwards; }
+  .stat:nth-child(1) { animation-delay: 0.02s; }
+  .stat:nth-child(2) { animation-delay: 0.05s; }
+  .stat:nth-child(3) { animation-delay: 0.08s; }
+  .stat:nth-child(4) { animation-delay: 0.11s; }
   @media (max-width: 600px) {
+    body { padding: 20px 16px; }
+    .header-text h1 { font-size: 26px; }
     .stats { grid-template-columns: repeat(2, 1fr); }
     .form-grid { grid-template-columns: 1fr; }
     .order { grid-template-columns: 1fr; }
-    .order-actions { flex-direction: row; }
+    .order-actions { flex-direction: row; flex-wrap: wrap; }
   }
 </style>
 </head>
@@ -97,29 +302,59 @@
     <div class="subtitle">Houd je online bestellingen overzichtelijk bij</div>
     <div class="badges">
       <span class="badge-pill" id="gmail-badge">Gmail laden...</span>
-      <span class="badge-pill" id="user-badge"></span>
+      <span class="badge-pill neutral" id="user-badge"></span>
     </div>
   </div>
   <div class="header-actions">
-    <button class="secondary small" id="scan-btn">Nu scannen</button>
+    <button class="secondary small" id="scan-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;display:inline;vertical-align:-2px;margin-right:4px;"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.4 2.6L21 8"/><path d="M21 3v5h-5"/></svg>
+      Nu scannen
+    </button>
     <button class="secondary small" onclick="logout()">Uitloggen</button>
   </div>
 </header>
 
 <div class="stats">
-  <div class="stat"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Totaal</div></div>
-  <div class="stat"><div class="stat-value" id="stat-besteld">0</div><div class="stat-label">Besteld</div></div>
-  <div class="stat"><div class="stat-value" id="stat-verzonden">0</div><div class="stat-label">Verzonden</div></div>
-  <div class="stat"><div class="stat-value" id="stat-bezorgd">0</div><div class="stat-label">Bezorgd</div></div>
+  <div class="stat">
+    <div class="stat-label-row">
+      <div class="stat-label">Totaal</div>
+      <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </div>
+    <div class="stat-value" id="stat-total">0</div>
+  </div>
+  <div class="stat" data-status="besteld">
+    <div class="stat-label-row">
+      <div class="stat-label">Besteld</div>
+      <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    </div>
+    <div class="stat-value" id="stat-besteld">0</div>
+  </div>
+  <div class="stat" data-status="verzonden">
+    <div class="stat-label-row">
+      <div class="stat-label">Verzonden</div>
+      <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    </div>
+    <div class="stat-value" id="stat-verzonden">0</div>
+  </div>
+  <div class="stat" data-status="bezorgd">
+    <div class="stat-label-row">
+      <div class="stat-label">Bezorgd</div>
+      <svg class="stat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div class="stat-value" id="stat-bezorgd">0</div>
+  </div>
 </div>
 
 <div class="panel">
-  <h2>Bestelling toevoegen via e-mail</h2>
+  <h2>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    Bestelling toevoegen via e-mail
+  </h2>
   <div class="help">
     Plak hier een bevestigingsmail. Of doe niks — Gmail wordt elke 15 minuten automatisch gescand.
   </div>
   <textarea id="email-input" placeholder="Plak hier je bevestigingsmail..."></textarea>
-  <div style="margin-top: 10px; display: flex; gap: 8px;">
+  <div style="margin-top: 12px; display: flex; gap: 8px;">
     <button onclick="parseEmail()">Bestelling herkennen</button>
     <button class="secondary" onclick="document.getElementById('email-input').value = ''">Wissen</button>
   </div>
@@ -127,7 +362,7 @@
 
 <details class="panel">
   <summary>Of voeg handmatig toe</summary>
-  <div style="margin-top: 12px;">
+  <div style="margin-top: 14px;">
     <div class="form-grid">
       <input id="m-product" placeholder="Product">
       <input id="m-shop" placeholder="Webshop">
@@ -156,6 +391,21 @@
 <script>
 let orders = [];
 let activeFilter = 'all';
+
+const ICONS = {
+  shop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11a1 1 0 001 1h12a1 1 0 001-1V9"/><path d="M9 21V14h6v7"/></svg>',
+  hash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  truck: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+  package: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8l-9-5-9 5v8l9 5 9-5z"/><line x1="3.27" y1="6.96" x2="12" y2="12.01"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+  mail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>',
+  inbox: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+};
+
+const STATUS_ICON = { besteld: ICONS.clock, verzonden: ICONS.truck, bezorgd: ICONS.check };
 
 async function api(path, options = {}) {
   const res = await fetch(path, {
@@ -191,14 +441,14 @@ function escapeHtml(s) {
 async function loadMe() {
   const me = await api('/api/me');
   if (!me) return;
-  document.getElementById('user-badge').textContent = '👤 ' + me.email;
+  document.getElementById('user-badge').innerHTML = ICONS.user + ' ' + escapeHtml(me.email);
   const gmailBadge = document.getElementById('gmail-badge');
   if (me.gmailConnected) {
-    gmailBadge.textContent = '✓ Gmail gekoppeld (' + me.gmailEmail + ')';
     gmailBadge.classList.remove('warn');
+    gmailBadge.innerHTML = ICONS.check + ' Gmail gekoppeld (' + escapeHtml(me.gmailEmail) + ')';
   } else {
-    gmailBadge.textContent = '⚠ Gmail nog niet gekoppeld';
     gmailBadge.classList.add('warn');
+    gmailBadge.innerHTML = ICONS.mail + ' Gmail nog niet gekoppeld';
   }
 }
 
@@ -217,28 +467,34 @@ function render() {
   const filtered = activeFilter === 'all' ? orders : orders.filter(o => o.status === activeFilter);
 
   if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty">Nog geen bestellingen. Plak een bevestigingsmail of wacht op de volgende Gmail-scan.</div>';
+    list.innerHTML = `
+      <div class="empty">
+        <div class="empty-icon">${ICONS.inbox}</div>
+        <div class="empty-title">Nog geen bestellingen</div>
+        <div class="empty-sub">Plak een bevestigingsmail of wacht op de volgende Gmail-scan.</div>
+      </div>`;
     return;
   }
 
   list.innerHTML = filtered.map(o => `
     <div class="order">
       <div>
-        <div class="order-product">${escapeHtml(o.product)}<span class="source-tag">${o.source === 'gmail' ? '✉ via Gmail' : ''}</span></div>
+        <div class="order-product">
+          ${escapeHtml(o.product)}
+          ${o.source === 'gmail' ? `<span class="source-tag">${ICONS.mail} via Gmail</span>` : ''}
+        </div>
         <div class="order-meta">
-          ${o.shop ? `<span>🏪 ${escapeHtml(o.shop)}</span>` : ''}
-          ${o.order_number ? `<span>#${escapeHtml(o.order_number)}</span>` : ''}
-          ${o.order_date ? `<span>📅 ${fmtDate(o.order_date)}</span>` : ''}
-          ${o.delivery_date ? `<span>🚚 ${fmtDate(o.delivery_date)}</span>` : ''}
-          ${o.tracking ? `<span>📦 ${escapeHtml(o.tracking)}</span>` : ''}
+          ${o.shop ? `<span>${ICONS.shop} ${escapeHtml(o.shop)}</span>` : ''}
+          ${o.order_number ? `<span>${ICONS.hash} ${escapeHtml(o.order_number)}</span>` : ''}
+          ${o.order_date ? `<span>${ICONS.calendar} ${fmtDate(o.order_date)}</span>` : ''}
+          ${o.delivery_date ? `<span>${ICONS.truck} ${fmtDate(o.delivery_date)}</span>` : ''}
+          ${o.tracking ? `<span>${ICONS.package} ${escapeHtml(o.tracking)}</span>` : ''}
         </div>
-        <div style="margin-top:8px;">
-          <span class="badge badge-${o.status}">${o.status.charAt(0).toUpperCase() + o.status.slice(1)}</span>
-        </div>
+        <span class="badge badge-${o.status}">${STATUS_ICON[o.status] || ''} ${o.status.charAt(0).toUpperCase() + o.status.slice(1)}</span>
       </div>
       <div class="order-actions">
-        ${o.status === 'besteld' ? `<button class="small" onclick="updateStatus(${o.id},'verzonden')">Verzonden</button>` : ''}
-        ${o.status === 'verzonden' ? `<button class="small" onclick="updateStatus(${o.id},'bezorgd')">Bezorgd</button>` : ''}
+        ${o.status === 'besteld' ? `<button class="small" onclick="updateStatus(${o.id},'verzonden')">Markeer verzonden</button>` : ''}
+        ${o.status === 'verzonden' ? `<button class="small" onclick="updateStatus(${o.id},'bezorgd')">Markeer bezorgd</button>` : ''}
         ${o.status === 'bezorgd' ? `<button class="small secondary" onclick="updateStatus(${o.id},'besteld')">Reset</button>` : ''}
         <button class="small secondary" onclick="deleteOrder(${o.id})">Verwijder</button>
       </div>
@@ -291,8 +547,10 @@ async function logout() {
 }
 
 document.getElementById('scan-btn').addEventListener('click', async (e) => {
-  e.target.disabled = true;
-  e.target.textContent = 'Scannen...';
+  const btn = e.currentTarget;
+  btn.disabled = true;
+  const original = btn.innerHTML;
+  btn.textContent = 'Scannen...';
   try {
     const result = await api('/api/scan', { method: 'POST' });
     toast(`Scan klaar: ${result.added} nieuwe bestelling(en)`);
@@ -300,8 +558,8 @@ document.getElementById('scan-btn').addEventListener('click', async (e) => {
   } catch (err) {
     toast('Scan mislukt: ' + err.message);
   } finally {
-    e.target.disabled = false;
-    e.target.textContent = 'Nu scannen';
+    btn.disabled = false;
+    btn.innerHTML = original;
   }
 });
 
