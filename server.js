@@ -9,6 +9,8 @@ const { extractOrder } = require('./parser');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '500kb' }));
 app.use(cookieSession({
   name: 'tracker_session',
