@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bestellingen Tracker</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #f5f3ef;
+    color: #2a2a2a;
+    line-height: 1.5;
+    padding: 24px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  header { margin-bottom: 28px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+  .header-text h1 { font-size: 28px; font-weight: 600; margin-bottom: 4px; }
+  .subtitle { color: #6b6b6b; font-size: 14px; }
+  .badges { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .badge-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #e8f0e3; color: #3d6630;
+    font-size: 12px; padding: 4px 10px; border-radius: 12px;
+  }
+  .badge-pill.warn { background: #fff3e0; color: #b8651a; }
+  .header-actions { display: flex; gap: 8px; align-items: center; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .stat { background: white; padding: 16px; border-radius: 10px; border: 1px solid #e8e4dd; }
+  .stat-value { font-size: 24px; font-weight: 600; }
+  .stat-label { font-size: 12px; color: #6b6b6b; text-transform: uppercase; letter-spacing: 0.5px; }
+  .panel { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e8e4dd; margin-bottom: 20px; }
+  .panel h2 { font-size: 16px; font-weight: 600; margin-bottom: 12px; }
+  textarea, input, select {
+    width: 100%; padding: 10px 12px; border: 1px solid #d8d4cc;
+    border-radius: 8px; font-size: 14px; font-family: inherit; background: #fafaf7;
+  }
+  textarea { resize: vertical; min-height: 100px; }
+  .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 10px; }
+  button {
+    background: #2a2a2a; color: white; border: none; padding: 10px 16px;
+    border-radius: 8px; font-size: 14px; cursor: pointer; font-family: inherit;
+  }
+  button:hover { background: #444; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.secondary { background: white; color: #2a2a2a; border: 1px solid #d8d4cc; }
+  button.secondary:hover { background: #f5f3ef; }
+  button.small { padding: 6px 10px; font-size: 12px; }
+  .filters { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-btn {
+    background: white; border: 1px solid #d8d4cc; color: #2a2a2a;
+    padding: 6px 12px; border-radius: 16px; font-size: 13px; cursor: pointer;
+  }
+  .filter-btn.active { background: #2a2a2a; color: white; border-color: #2a2a2a; }
+  .order {
+    background: white; border: 1px solid #e8e4dd; border-radius: 10px;
+    padding: 16px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr auto;
+    gap: 12px; align-items: start;
+  }
+  .order-product { font-weight: 600; margin-bottom: 4px; }
+  .order-meta { font-size: 13px; color: #6b6b6b; }
+  .order-meta span { margin-right: 12px; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+  .badge-besteld { background: #fff3e0; color: #b8651a; }
+  .badge-verzonden { background: #e3eef9; color: #1f5798; }
+  .badge-bezorgd { background: #e8f0e3; color: #3d6630; }
+  .source-tag { font-size: 11px; color: #999; margin-left: 6px; }
+  .order-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .empty { text-align: center; padding: 40px; color: #6b6b6b; }
+  .help {
+    background: #f5f3ef; border-left: 3px solid #c8b88a; padding: 10px 14px;
+    margin-bottom: 12px; font-size: 13px; color: #4a4a4a; border-radius: 4px;
+  }
+  details { margin-bottom: 12px; }
+  summary { cursor: pointer; font-weight: 500; padding: 8px 0; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 12px; }
+  .toast {
+    position: fixed; bottom: 20px; right: 20px; background: #2a2a2a; color: white;
+    padding: 12px 16px; border-radius: 8px; font-size: 14px; opacity: 0;
+    transition: opacity 0.2s; pointer-events: none; z-index: 100;
+  }
+  .toast.show { opacity: 1; }
+  @media (max-width: 600px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr; }
+    .order { grid-template-columns: 1fr; }
+    .order-actions { flex-direction: row; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-text">
+    <h1>Bestellingen Tracker</h1>
+    <div class="subtitle">Houd je online bestellingen overzichtelijk bij</div>
+    <div class="badges">
+      <span class="badge-pill" id="gmail-badge">Gmail laden...</span>
+      <span class="badge-pill" id="user-badge"></span>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="secondary small" id="scan-btn">Nu scannen</button>
+    <button class="secondary small" onclick="logout()">Uitloggen</button>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Totaal</div></div>
+  <div class="stat"><div class="stat-value" id="stat-besteld">0</div><div class="stat-label">Besteld</div></div>
+  <div class="stat"><div class="stat-value" id="stat-verzonden">0</div><div class="stat-label">Verzonden</div></div>
+  <div class="stat"><div class="stat-value" id="stat-bezorgd">0</div><div class="stat-label">Bezorgd</div></div>
+</div>
+
+<div class="panel">
+  <h2>Bestelling toevoegen via e-mail</h2>
+  <div class="help">
+    Plak hier een bevestigingsmail. Of doe niks — Gmail wordt elke 15 minuten automatisch gescand.
+  </div>
+  <textarea id="email-input" placeholder="Plak hier je bevestigingsmail..."></textarea>
+  <div style="margin-top: 10px; display: flex; gap: 8px;">
+    <button onclick="parseEmail()">Bestelling herkennen</button>
+    <button class="secondary" onclick="document.getElementById('email-input').value = ''">Wissen</button>
+  </div>
+</div>
+
+<details class="panel">
+  <summary>Of voeg handmatig toe</summary>
+  <div style="margin-top: 12px;">
+    <div class="form-grid">
+      <input id="m-product" placeholder="Product">
+      <input id="m-shop" placeholder="Webshop">
+      <input id="m-order" placeholder="Bestelnummer">
+      <input id="m-date" type="date">
+      <input id="m-delivery" type="date" placeholder="Verwachte levering">
+      <input id="m-tracking" placeholder="Trackingnummer (optioneel)">
+    </div>
+    <button onclick="addManual()">Toevoegen</button>
+  </div>
+</details>
+
+<div class="toolbar">
+  <div class="filters">
+    <button class="filter-btn active" data-filter="all">Alles</button>
+    <button class="filter-btn" data-filter="besteld">Besteld</button>
+    <button class="filter-btn" data-filter="verzonden">Verzonden</button>
+    <button class="filter-btn" data-filter="bezorgd">Bezorgd</button>
+  </div>
+</div>
+
+<div id="orders-list"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let orders = [];
+let activeFilter = 'all';
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  });
+  if (res.status === 401) { window.location.href = '/login'; return; }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'Verzoek mislukt');
+  }
+  return res.json();
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const date = new Date(d);
+  if (isNaN(date)) return d;
+  return date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+async function loadMe() {
+  const me = await api('/api/me');
+  if (!me) return;
+  document.getElementById('user-badge').textContent = '👤 ' + me.email;
+  const gmailBadge = document.getElementById('gmail-badge');
+  if (me.gmailConnected) {
+    gmailBadge.textContent = '✓ Gmail gekoppeld (' + me.gmailEmail + ')';
+    gmailBadge.classList.remove('warn');
+  } else {
+    gmailBadge.textContent = '⚠ Gmail nog niet gekoppeld';
+    gmailBadge.classList.add('warn');
+  }
+}
+
+async function loadOrders() {
+  orders = await api('/api/orders') || [];
+  render();
+}
+
+function render() {
+  document.getElementById('stat-total').textContent = orders.length;
+  document.getElementById('stat-besteld').textContent = orders.filter(o => o.status === 'besteld').length;
+  document.getElementById('stat-verzonden').textContent = orders.filter(o => o.status === 'verzonden').length;
+  document.getElementById('stat-bezorgd').textContent = orders.filter(o => o.status === 'bezorgd').length;
+
+  const list = document.getElementById('orders-list');
+  const filtered = activeFilter === 'all' ? orders : orders.filter(o => o.status === activeFilter);
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="empty">Nog geen bestellingen. Plak een bevestigingsmail of wacht op de volgende Gmail-scan.</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(o => `
+    <div class="order">
+      <div>
+        <div class="order-product">${escapeHtml(o.product)}<span class="source-tag">${o.source === 'gmail' ? '✉ via Gmail' : ''}</span></div>
+        <div class="order-meta">
+          ${o.shop ? `<span>🏪 ${escapeHtml(o.shop)}</span>` : ''}
+          ${o.order_number ? `<span>#${escapeHtml(o.order_number)}</span>` : ''}
+          ${o.order_date ? `<span>📅 ${fmtDate(o.order_date)}</span>` : ''}
+          ${o.delivery_date ? `<span>🚚 ${fmtDate(o.delivery_date)}</span>` : ''}
+          ${o.tracking ? `<span>📦 ${escapeHtml(o.tracking)}</span>` : ''}
+        </div>
+        <div style="margin-top:8px;">
+          <span class="badge badge-${o.status}">${o.status.charAt(0).toUpperCase() + o.status.slice(1)}</span>
+        </div>
+      </div>
+      <div class="order-actions">
+        ${o.status === 'besteld' ? `<button class="small" onclick="updateStatus(${o.id},'verzonden')">Verzonden</button>` : ''}
+        ${o.status === 'verzonden' ? `<button class="small" onclick="updateStatus(${o.id},'bezorgd')">Bezorgd</button>` : ''}
+        ${o.status === 'bezorgd' ? `<button class="small secondary" onclick="updateStatus(${o.id},'besteld')">Reset</button>` : ''}
+        <button class="small secondary" onclick="deleteOrder(${o.id})">Verwijder</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateStatus(id, status) {
+  await api(`/api/orders/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) });
+  await loadOrders();
+}
+
+async function deleteOrder(id) {
+  if (!confirm('Deze bestelling verwijderen?')) return;
+  await api(`/api/orders/${id}`, { method: 'DELETE' });
+  await loadOrders();
+}
+
+async function parseEmail() {
+  const text = document.getElementById('email-input').value;
+  if (!text.trim()) { alert('Plak eerst een e-mail in het tekstvak.'); return; }
+  await api('/api/orders/parse', { method: 'POST', body: JSON.stringify({ text }) });
+  document.getElementById('email-input').value = '';
+  toast('Bestelling toegevoegd');
+  await loadOrders();
+}
+
+async function addManual() {
+  const product = document.getElementById('m-product').value.trim();
+  if (!product) { alert('Vul minimaal een productnaam in.'); return; }
+  await api('/api/orders', {
+    method: 'POST',
+    body: JSON.stringify({
+      product,
+      shop: document.getElementById('m-shop').value.trim(),
+      orderNumber: document.getElementById('m-order').value.trim(),
+      orderDate: document.getElementById('m-date').value || null,
+      deliveryDate: document.getElementById('m-delivery').value || null,
+      tracking: document.getElementById('m-tracking').value.trim()
+    })
+  });
+  ['m-product','m-shop','m-order','m-date','m-delivery','m-tracking'].forEach(id => document.getElementById(id).value = '');
+  toast('Bestelling toegevoegd');
+  await loadOrders();
+}
+
+async function logout() {
+  await api('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+document.getElementById('scan-btn').addEventListener('click', async (e) => {
+  e.target.disabled = true;
+  e.target.textContent = 'Scannen...';
+  try {
+    const result = await api('/api/scan', { method: 'POST' });
+    toast(`Scan klaar: ${result.added} nieuwe bestelling(en)`);
+    await loadOrders();
+  } catch (err) {
+    toast('Scan mislukt: ' + err.message);
+  } finally {
+    e.target.disabled = false;
+    e.target.textContent = 'Nu scannen';
+  }
+});
+
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+(async () => {
+  await loadMe();
+  await loadOrders();
+})();
+</script>
+</body>
+</html>

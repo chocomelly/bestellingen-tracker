@@ -1,0 +1,20 @@
+{
+  "name": "bestellingen-tracker",
+  "version": "1.0.0",
+  "description": "Persoonlijke bestellingen tracker met Gmail-koppeling",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "init-db": "node -e \"require('./db').init().then(() => process.exit(0))\""
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cookie-session": "^2.1.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "googleapis": "^144.0.0",
+    "pg": "^8.13.1"
+  }
+}
