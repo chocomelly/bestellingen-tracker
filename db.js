@@ -29,13 +29,15 @@ CREATE INDEX IF NOT EXISTS orders_order_date_idx ON orders(order_date DESC);
 CREATE TABLE IF NOT EXISTS gmail_tokens (
   id             INT PRIMARY KEY DEFAULT 1,
   access_token   TEXT,
-  refresh_token  TEXT NOT NULL,
+  refresh_token  TEXT,
   expiry_date    BIGINT,
   scope          TEXT,
   email          TEXT,
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   CHECK (id = 1)
 );
+
+ALTER TABLE gmail_tokens ALTER COLUMN refresh_token DROP NOT NULL;
 
 CREATE TABLE IF NOT EXISTS processed_messages (
   gmail_msg_id  TEXT PRIMARY KEY,
