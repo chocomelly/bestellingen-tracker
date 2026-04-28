@@ -48,6 +48,9 @@ function extractOrder(text) {
   const trackingMatch = text.match(/(?:track(?:ing)?(?:\s*(?:nummer|number|code|id))?|t&t)[:\s#]*([A-Z0-9]{8,30})/i);
   if (trackingMatch) result.tracking = trackingMatch[1];
 
+  const carrier = detectCarrier(text, result.tracking);
+  if (carrier) result.carrier = carrier;
+
   const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   for (let i = 0; i < lines.length; i++) {
     const l = lines[i];
@@ -91,6 +94,23 @@ function parseEnglishDate(day, month) {
   if (!m) return null;
   const y = new Date().getFullYear();
   return `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function detectCarrier(text, tracking) {
+  const t = text.toLowerCase();
+  if (/\bpostnl\b|post\.nl|jouw\.postnl/.test(t)) return 'postnl';
+  if (/\bdhl\b|dhlparcel/.test(t)) return 'dhl';
+  if (/\bdpd\b/.test(t)) return 'dpd';
+  if (/\bups\b/.test(t)) return 'ups';
+  if (/\bfedex\b/.test(t)) return 'fedex';
+  if (/\bgls\b/.test(t)) return 'gls';
+  if (/\bbpost\b/.test(t)) return 'bpost';
+  if (tracking) {
+    if (/^3S/.test(tracking)) return 'postnl';
+    if (/^1Z/.test(tracking)) return 'ups';
+    if (/^(JJD|JD)/.test(tracking)) return 'dhl';
+  }
+  return null;
 }
 
 module.exports = { extractOrder };

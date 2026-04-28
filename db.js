@@ -17,11 +17,15 @@ CREATE TABLE IF NOT EXISTS orders (
   order_date    DATE,
   delivery_date DATE,
   tracking      TEXT,
+  carrier       TEXT,
   status        TEXT NOT NULL DEFAULT 'besteld',
   source        TEXT NOT NULL DEFAULT 'manual',
   gmail_msg_id  TEXT UNIQUE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS carrier TEXT;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_status TEXT;
 
 CREATE INDEX IF NOT EXISTS orders_status_idx ON orders(status);
 CREATE INDEX IF NOT EXISTS orders_order_date_idx ON orders(order_date DESC);
@@ -59,8 +63,8 @@ async function listOrders() {
 
 async function insertOrder(o) {
   const { rows } = await pool.query(
-    `INSERT INTO orders (product, shop, order_number, order_date, delivery_date, tracking, status, source, gmail_msg_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO orders (product, shop, order_number, order_date, delivery_date, tracking, carrier, status, source, gmail_msg_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      ON CONFLICT (gmail_msg_id) DO NOTHING
      RETURNING *`,
     [
@@ -70,6 +74,7 @@ async function insertOrder(o) {
       o.orderDate || null,
       o.deliveryDate || null,
       o.tracking || null,
+      o.carrier || null,
       o.status || 'besteld',
       o.source || 'manual',
       o.gmailMsgId || null
@@ -79,7 +84,7 @@ async function insertOrder(o) {
 }
 
 async function updateOrder(id, fields) {
-  const allowed = ['product', 'shop', 'order_number', 'order_date', 'delivery_date', 'tracking', 'status'];
+  const allowed = ['product', 'shop', 'order_number', 'order_date', 'delivery_date', 'tracking', 'carrier', 'tracking_status', 'status'];
   const sets = [];
   const values = [];
   let i = 1;

@@ -201,8 +201,40 @@
     display: flex; flex-wrap: wrap; gap: 4px 14px;
     margin-bottom: 10px;
   }
-  .order-meta span { display: inline-flex; align-items: center; gap: 5px; }
+  .order-meta span, .order-meta a { display: inline-flex; align-items: center; gap: 5px; }
   .order-meta svg { width: 13px; height: 13px; opacity: 0.6; }
+  .tracking-link {
+    color: var(--verzonden);
+    background: none; border: none; padding: 0; cursor: pointer;
+    font: inherit;
+    border-bottom: 1px dashed rgba(37, 99, 168, 0.4);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tracking-link:hover { color: var(--text); border-bottom-color: var(--text); }
+  .tracking-link svg { opacity: 0.8; }
+  .track-on {
+    flex-basis: 100%;
+    font-size: 11.5px; color: var(--text-subtle);
+    margin-top: -2px;
+  }
+  .track-on a {
+    color: var(--text-muted); text-decoration: none;
+    border-bottom: 1px dotted var(--border);
+  }
+  .track-on a:hover { color: var(--verzonden); border-bottom-color: var(--verzonden); }
+  .carrier-tag {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.4px;
+    background: var(--verzonden-bg); color: var(--verzonden);
+    padding: 1px 6px; border-radius: 4px;
+    margin-left: 2px;
+  }
+  .tracking-status {
+    font-size: 12px; font-style: italic;
+    color: var(--text-subtle);
+    flex-basis: 100%;
+    margin-top: -2px;
+  }
   .badge {
     display: inline-flex; align-items: center; gap: 5px;
     padding: 4px 11px; border-radius: 999px;
@@ -438,6 +470,46 @@ function escapeHtml(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
+const CARRIER_LABELS = {
+  postnl: 'PostNL', dhl: 'DHL', dpd: 'DPD', ups: 'UPS',
+  fedex: 'FedEx', gls: 'GLS', bpost: 'bpost'
+};
+const CARRIER_URLS = {
+  postnl: c => `https://jouw.postnl.nl/track-and-trace/${c}/NL`,
+  dhl:    c => `https://www.dhlparcel.nl/nl/consument/volg-uw-zending.html?tt=${c}`,
+  dpd:    c => `https://tracking.dpd.de/status/nl_NL/parcel/${c}`,
+  ups:    c => `https://www.ups.com/track?tracknum=${c}`,
+  fedex:  c => `https://www.fedex.com/fedextrack/?tracknumbers=${c}`,
+  gls:    c => `https://gls-group.com/track/${c}`,
+  bpost:  c => `https://track.bpost.cloud/btr/web/#/search?itemCode=${c}&lang=nl`
+};
+function trackUrl(carrier, code) {
+  const enc = encodeURIComponent(code);
+  const fn = carrier && CARRIER_URLS[carrier.toLowerCase()];
+  return fn ? fn(enc) : `https://parcelsapp.com/en/tracking/${enc}`;
+}
+function carrierLabel(carrier) {
+  return CARRIER_LABELS[carrier?.toLowerCase()] || escapeHtml(carrier);
+}
+
+const TRACKER_LINKS = [
+  { name: 'PostNL', url: 'https://jouw.postnl.nl/track-and-trace' },
+  { name: 'DHL',    url: 'https://www.dhlparcel.nl/nl/consument/volg-uw-zending.html' },
+  { name: 'DPD',    url: 'https://tracking.dpd.de/parcelstatus?lang=nl_NL' },
+  { name: 'UPS',    url: 'https://www.ups.com/track' },
+  { name: 'bpost',  url: 'https://track.bpost.cloud/btr/web/' },
+  { name: 'parcelsapp', url: 'https://parcelsapp.com/' }
+];
+
+async function copyTracking(code) {
+  try {
+    await navigator.clipboard.writeText(code);
+    toast(`Gekopieerd: ${code}`);
+  } catch {
+    toast('Kopiëren mislukt');
+  }
+}
+
 async function loadMe() {
   const me = await api('/api/me');
   if (!me) return;
@@ -488,7 +560,9 @@ function render() {
           ${o.order_number ? `<span>${ICONS.hash} ${escapeHtml(o.order_number)}</span>` : ''}
           ${o.order_date ? `<span>${ICONS.calendar} ${fmtDate(o.order_date)}</span>` : ''}
           ${o.delivery_date ? `<span>${ICONS.truck} ${fmtDate(o.delivery_date)}</span>` : ''}
-          ${o.tracking ? `<span>${ICONS.package} ${escapeHtml(o.tracking)}</span>` : ''}
+          ${o.tracking ? `<button class="tracking-link" onclick="copyTracking('${escapeHtml(o.tracking)}')" title="Klik om te kopiëren">${ICONS.package} ${escapeHtml(o.tracking)}${o.carrier ? ` <span class="carrier-tag">${carrierLabel(o.carrier)}</span>` : ''}</button>` : ''}
+          ${o.tracking_status ? `<span class="tracking-status">${ICONS.truck} ${escapeHtml(o.tracking_status)}</span>` : ''}
+          ${o.tracking ? `<span class="track-on">Open op: ${TRACKER_LINKS.map(t => `<a href="${t.url}" target="_blank" rel="noopener">${t.name}</a>`).join(' · ')}</span>` : ''}
         </div>
         <span class="badge badge-${o.status}">${STATUS_ICON[o.status] || ''} ${o.status.charAt(0).toUpperCase() + o.status.slice(1)}</span>
       </div>

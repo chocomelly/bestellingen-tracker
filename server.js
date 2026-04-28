@@ -4,6 +4,7 @@ const cookieSession = require('cookie-session');
 const path = require('path');
 const db = require('./db');
 const gmail = require('./gmail');
+const seventeen = require('./seventeen');
 const { extractOrder } = require('./parser');
 
 const app = express();
@@ -142,6 +143,40 @@ async function startScanLoop() {
   }
 }
 
+async function startTrackingLoop() {
+  if (!seventeen.enabled) return;
+  try {
+    const all = await db.listOrders();
+    const active = all.filter(o => o.tracking && o.status !== 'bezorgd');
+    if (!active.length) return;
+
+    const numbers = [...new Set(active.map(o => o.tracking))];
+    await seventeen.register(numbers).catch(err => console.warn('[track] register:', err.message));
+    const result = await seventeen.getInfo(numbers);
+    const accepted = result?.data?.accepted || [];
+
+    for (const item of accepted) {
+      const order = active.find(o => o.tracking === item.number);
+      if (!order) continue;
+      const latest = item.track_info?.latest_status?.status;
+      const statusText = item.track_info?.latest_status?.sub_status_descr
+        || item.track_info?.latest_event?.description
+        || latest;
+      const mapped = seventeen.mapStatus(latest);
+
+      const updates = {};
+      if (mapped && mapped !== order.status) updates.status = mapped;
+      if (statusText && statusText !== order.tracking_status) updates.tracking_status = statusText;
+      if (Object.keys(updates).length) {
+        await db.updateOrder(order.id, updates);
+        console.log(`[track] ${order.tracking}: ${latest}`);
+      }
+    }
+  } catch (err) {
+    console.error('[track] error:', err.message);
+  }
+}
+
 (async () => {
   try {
     await db.init();
@@ -151,6 +186,9 @@ async function startScanLoop() {
 
   setTimeout(startScanLoop, 30_000);
   setInterval(startScanLoop, intervalMin * 60 * 1000);
+
+  setTimeout(startTrackingLoop, 60_000);
+  setInterval(startTrackingLoop, 30 * 60 * 1000);
 
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
